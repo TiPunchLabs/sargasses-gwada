@@ -25,7 +25,11 @@ Neutrals are tinted toward the brand hues; never `#000` / `#fff`.
 
 **Alert levels** (stranding intensity)
 - `lvl0` Nul (muted sage) · `lvl1` Faible (gold) · `lvl2` Modéré (orange) ·
-  `lvl3` Massif (rust red) · `accent` warm orange.
+  `lvl3` Massif (rust red) · `accent` warm amber (held off `lvl2`'s hue so it
+  stays distinct).
+- Lightness steps **down** monotonically `lvl1`→`lvl3` and chroma rises with
+  severity, so the ramp also reads in greyscale / for colour-blind viewers.
+  `lvl3` and `ink-faint` are tuned to clear WCAG AA (4.5:1) as text on paper.
 
 ## Typography
 

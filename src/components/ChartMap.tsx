@@ -4,6 +4,7 @@ import { ISLANDS } from '../data/coastline'
 import { coastPath, KM_PER_LON, MAP_H, MAP_W, project } from '../lib/geo'
 import { LEVELS, SITES, type StrandingSite } from '../data/strandings'
 import { cn, fmt } from '../lib/utils'
+import { useIsMobile } from '../lib/useMediaQuery'
 
 interface ChartMapProps {
   selectedId: string
@@ -77,9 +78,9 @@ const CURRENTS: Array<[number, number][]> = [
 
 const SOUFRIERE: [number, number] = [-61.664, 16.044]
 
-function markerRadius(site: StrandingSite): number {
-  if (site.level === 0) return 4.5
-  return 7 + (site.volumeM3 / 480) * 15
+function markerRadius(site: StrandingSite, scale = 1): number {
+  if (site.level === 0) return 4.5 * scale
+  return (7 + (site.volumeM3 / 480) * 15) * scale
 }
 
 function tooltipStyle(x: number, y: number): CSSProperties {
@@ -118,8 +119,17 @@ const SCALE_LEN = scaleX1 - scaleX0
 export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
   const frameRef = useRef<HTMLDivElement>(null)
   const inView = useInView(frameRef)
+  const isMobile = useIsMobile()
   const selected = SITES.find((s) => s.id === selectedId)
   const selectedPt = selected ? project(selected.lon, selected.lat) : null
+
+  // The map scales to container width, so on a phone every label/marker shrinks
+  // to a few pixels. Enlarge the type, fatten markers, and drop the densest
+  // instrument layers (graticule labels, scale bar, coastal-feature leaders) so
+  // the chart stays legible without overcrowding the small frame.
+  const k = isMobile ? 1.9 : 1 // label type multiplier
+  const mk = isMobile ? 1.4 : 1 // marker radius multiplier
+  const fs = (n: number) => n * k
 
   return (
     <div
@@ -186,8 +196,14 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
           {/* Open sea */}
           <rect width={MAP_W} height={MAP_H} fill="url(#sea)" />
 
-          {/* Graticule */}
-          <g className="font-mono" fill="var(--color-foam)" fontSize="11" opacity="0.5">
+          {/* Graticule — instrument detail, dropped on phones to cut clutter */}
+          <g
+            className="font-mono"
+            fill="var(--color-foam)"
+            fontSize="11"
+            opacity="0.5"
+            display={isMobile ? 'none' : undefined}
+          >
             {GRATICULE_LON.map(({ lon, label }) => {
               const [x] = project(lon, 16)
               return (
@@ -249,7 +265,7 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
             <text
               x={project(-61.02, 16.02)[0]}
               y={project(-61.02, 16.02)[1]}
-              fontSize="12.5"
+              fontSize={fs(12.5)}
               fontStyle="italic"
               fill="var(--color-foam)"
               opacity="0.78"
@@ -302,9 +318,9 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
               strokeWidth="0.8"
             />
             <text
-              x={souX + 12}
+              x={souX + (isMobile ? 16 : 12)}
               y={souY + 4}
-              fontSize="11"
+              fontSize={fs(11)}
               fontStyle="italic"
               fill="var(--color-foam)"
               className="font-display"
@@ -313,8 +329,14 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
             </text>
           </g>
 
-          {/* Coastal feature labels */}
-          <g className="font-display" fill="var(--color-foam)" fontStyle="italic" fontSize="12">
+          {/* Coastal feature labels — leader-lined toponyms, too dense for phones */}
+          <g
+            className="font-display"
+            fill="var(--color-foam)"
+            fontStyle="italic"
+            fontSize="12"
+            display={isMobile ? 'none' : undefined}
+          >
             {FEATURES.map((f) => {
               const [x, y] = project(f.lon, f.lat)
               const to = f.to ? project(f.to[0], f.to[1]) : null
@@ -349,26 +371,34 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
             {ISLAND_LABELS.map((l) => {
               const [x, y] = project(l.lon, l.lat)
               return (
-                <text key={l.text} x={x} y={y} fontSize={l.size} letterSpacing="0.04em">
+                <text key={l.text} x={x} y={y} fontSize={fs(l.size)} letterSpacing="0.04em">
                   {l.text}
                 </text>
               )
             })}
           </g>
 
-          {/* Sea names */}
+          {/* Sea names — widely tracked; tighten spacing on phones so they fit */}
           <g
             fill="var(--color-foam)"
             fontStyle="italic"
-            letterSpacing="0.3em"
+            letterSpacing={isMobile ? '0.16em' : '0.3em'}
             textAnchor="middle"
             opacity="0.6"
             className="font-display"
           >
-            <text x={project(-61.16, 16.5)[0]} y={project(-61.16, 16.5)[1]} fontSize="18">
+            <text
+              x={project(-61.16, 16.5)[0]}
+              y={project(-61.16, 16.5)[1]}
+              fontSize={isMobile ? 26 : 18}
+            >
               OCÉAN ATLANTIQUE
             </text>
-            <text x={project(-61.73, 15.89)[0]} y={project(-61.73, 15.89)[1]} fontSize="16">
+            <text
+              x={project(-61.73, 15.89)[0]}
+              y={project(-61.73, 15.89)[1]}
+              fontSize={isMobile ? 23 : 16}
+            >
               MER DES CARAÏBES
             </text>
           </g>
@@ -389,19 +419,20 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
               textAnchor="middle"
               fill="var(--color-foam)"
               stroke="none"
-              fontSize="13"
+              fontSize={fs(13)}
               className="font-mono"
             >
               N
             </text>
           </g>
 
-          {/* Scale bar */}
+          {/* Scale bar — dropped on phones to cut clutter */}
           <g
             transform={`translate(44, ${MAP_H - 46})`}
             stroke="var(--color-foam)"
             strokeWidth="1.3"
             opacity="0.85"
+            display={isMobile ? 'none' : undefined}
           >
             <line x1="0" y1="0" x2={SCALE_LEN} y2="0" />
             <line x1="0" y1="-4" x2="0" y2="4" />
@@ -423,10 +454,10 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
           <g>
             {SITES.map((site) => {
               const [x, y] = project(site.lon, site.lat)
-              const r = markerRadius(site)
+              const r = markerRadius(site, mk)
               const color = LEVELS[site.level].cssVar
               const isSelected = site.id === selectedId
-              const hit = Math.max(r + 5, 15)
+              const hit = isMobile ? Math.max(r + 8, 30) : Math.max(r + 5, 15)
               const label = `${site.name} — niveau ${LEVELS[site.level].label}, ${fmt(site.volumeM3)} mètres cubes sur 7 jours`
               return (
                 <g key={site.id} className="group">
@@ -460,8 +491,19 @@ export function ChartMap({ selectedId, onSelect }: ChartMapProps) {
                       />
                     ) : (
                       <>
-                        <circle cx={x} cy={y} r={r} fill={color} opacity="0.16" />
-                        <circle cx={x} cy={y} r={r * 0.66} fill="none" stroke={color} strokeWidth="2" />
+                        <circle cx={x} cy={y} r={r} fill={color} opacity="0.2" />
+                        {/* Foam casing lifts the coloured ring off the dark water,
+                            so severity reads without darkening the lvl tokens. */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={r * 0.66}
+                          fill="none"
+                          stroke="var(--color-foam)"
+                          strokeWidth="3.4"
+                          opacity="0.45"
+                        />
+                        <circle cx={x} cy={y} r={r * 0.66} fill="none" stroke={color} strokeWidth="2.2" />
                         <circle
                           cx={x}
                           cy={y}
