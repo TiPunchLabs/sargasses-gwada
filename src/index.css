@@ -14,8 +14,10 @@
 
   /* Ink — an abyssal teal-navy, tinted toward the sea hue. */
   --color-ink: oklch(0.34 0.052 233);
-  --color-ink-soft: oklch(0.5 0.044 233);
-  --color-ink-faint: oklch(0.63 0.03 231);
+  --color-ink-soft: oklch(0.47 0.045 233);
+  /* Darkened from 0.63 so small mono captions clear WCAG AA (4.5:1) on paper,
+     while staying a visible step lighter than ink-soft. */
+  --color-ink-faint: oklch(0.52 0.04 232);
 
   /* Sea — the immersive sections and the chart bathymetry. */
   --color-sea-deep: oklch(0.42 0.088 234);
@@ -33,12 +35,16 @@
   --color-land-deep: oklch(0.43 0.078 145);
   --color-land-edge: oklch(0.31 0.05 150);
 
-  /* Alert levels — sargassum stranding intensity. */
-  --color-lvl0: oklch(0.67 0.038 142);
-  --color-lvl1: oklch(0.77 0.132 82);
-  --color-lvl2: oklch(0.68 0.158 56);
-  --color-lvl3: oklch(0.56 0.176 35);
-  --color-accent: oklch(0.67 0.13 64);
+  /* Alert levels — sargassum stranding intensity. Lightness now steps down
+     monotonically with severity (lvl1 → lvl3), so the ramp also reads in
+     greyscale / for colour-blind viewers; chroma rises with severity for punch.
+     lvl0 (Nul) stays a low-chroma sage, set apart by being muted rather than dark. */
+  --color-lvl0: oklch(0.71 0.03 146);
+  --color-lvl1: oklch(0.785 0.15 85);
+  --color-lvl2: oklch(0.66 0.178 52);
+  --color-lvl3: oklch(0.54 0.205 32);
+  /* Warm amber, pulled off lvl2's orange so the brand accent stays distinct. */
+  --color-accent: oklch(0.7 0.15 72);
 }
 
 html {

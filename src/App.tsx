@@ -49,7 +49,7 @@ export default function App() {
       <main>
         <Hero />
 
-        <WaveDivider from="var(--color-paper)" to="var(--color-sea-deep)" />
+        <WaveDivider from="var(--color-sea)" to="var(--color-sea-deep)" />
 
         <div className="relative bg-sea-deep text-foam">
           <motion.section className="mx-auto max-w-320 px-6 pt-10 pb-4" {...revealSection}>
